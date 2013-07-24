@@ -7,8 +7,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{StaticResource ApplicationPageBackgroundThemeBrush}">
+    <Grid>
         <Button Click="Button_Click" Content="Button" HorizontalAlignment="Left" Margin="624,269,0,0" VerticalAlignment="Top"/>
-
+        <Border Name="TestRectangle"
+            PointerEntered="TestRectangle_PointerEntered" BorderBrush="Red" BorderThickness="10">
+            
+        </Border>
+        <Rectangle Name="InnerRectangle" PointerEntered="InnerRectangle_PointerEntered" Fill="Black" Margin="10"></Rectangle>
     </Grid>
 </Page>

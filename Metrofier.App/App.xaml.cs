@@ -1,11 +1,14 @@
-﻿using System;
+﻿using Metrofier.Metadata;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.ServiceModel;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI.Input;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -23,6 +26,11 @@ namespace Metrofier.App
     /// </summary>
     sealed partial class App : Application
     {
+
+        public readonly IMetrofierService service;
+        const string address = "http://localhost:8000/Metrofier/service";
+        public uint processId = 0;
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -31,6 +39,25 @@ namespace Metrofier.App
         {
             this.InitializeComponent();
             this.Suspending += OnSuspending;
+            
+
+            BasicHttpBinding binding = new BasicHttpBinding();
+            ChannelFactory<IMetrofierService> factory = new ChannelFactory<IMetrofierService>(binding, new EndpointAddress(address));
+            service = factory.CreateChannel();
+        }
+
+        public void CoreWindow_VisibilityChanged(Windows.UI.Core.CoreWindow sender, Windows.UI.Core.VisibilityChangedEventArgs args)
+        {
+            System.Diagnostics.Debug.WriteLine("VisibilityChanged");
+
+            if (args.Visible)
+            {
+                bool result = service.Show(processId);
+            }
+            else
+            {
+                bool result = service.Hide(processId);
+            }
         }
 
         /// <summary>
@@ -69,8 +96,44 @@ namespace Metrofier.App
                     throw new Exception("Failed to create initial page");
                 }
             }
+            System.Diagnostics.Debug.WriteLine("OnLaunched");
+            processId = service.Start("C:\\Windows\\System32\\notepad.exe", "C:\\Windows\\System32");
             // Ensure the current window is active
             Window.Current.Activate();
+
+            Window.Current.CoreWindow.VisibilityChanged += CoreWindow_VisibilityChanged;
+            Window.Current.CoreWindow.Closed += CoreWindow_Closed;
+            Window.Current.CoreWindow.SizeChanged += CoreWindow_SizeChanged;
+
+            service.Resize(processId,(int)Window.Current.CoreWindow.Bounds.Width, (int)Window.Current.CoreWindow.Bounds.Height);
+
+            EdgeGesture edgeGesture = EdgeGesture.GetForCurrentView();
+            edgeGesture.Starting += edgeGesture_Starting;
+        }
+
+        void edgeGesture_Starting(EdgeGesture sender, EdgeGestureEventArgs args)
+        {
+            service.Hide(processId);
+        }
+
+        void CoreWindow_SizeChanged(Windows.UI.Core.CoreWindow sender, Windows.UI.Core.WindowSizeChangedEventArgs args)
+        {
+            System.Diagnostics.Debug.WriteLine("SizeChanged");
+            service.Resize(processId, (int)Window.Current.CoreWindow.Bounds.Width, (int)Window.Current.CoreWindow.Bounds.Height);
+        }
+
+        void CoreWindow_Closed(Windows.UI.Core.CoreWindow sender, Windows.UI.Core.CoreWindowEventArgs args)
+        {
+            service.Close(processId);
+        }
+
+        protected override void OnActivated(IActivatedEventArgs args)
+        {
+            System.Diagnostics.Debug.WriteLine("OnActivated");
+            base.OnActivated(args);
+
+            //service.Start("C:\\Program Files (x86)\\XBMC\\XBMC.exe", "C:\\Program Files (x86)\\XBMC");
+            //service.Show(processId);
         }
 
         /// <summary>
@@ -82,6 +145,7 @@ namespace Metrofier.App
         /// <param name="e">Details about the suspend request.</param>
         private void OnSuspending(object sender, SuspendingEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine("OnSuspending");
             var deferral = e.SuspendingOperation.GetDeferral();
             //TODO: Save application state and stop any background activity
             deferral.Complete();

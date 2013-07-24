@@ -14,11 +14,14 @@ namespace Metrofier.Host
     public class MetrofierService : IMetrofierService
     {
 
-        Dictionary<uint, IntPtr> launchedWindows;
+        private static Dictionary<uint, IntPtr> launchedWindows;
 
         public MetrofierService()
         {
-            launchedWindows = new Dictionary<uint, IntPtr>();
+            if (launchedWindows == null)
+            {
+                launchedWindows = new Dictionary<uint, IntPtr>();
+            }
         }
 
         private bool BringForward(IntPtr window)
@@ -36,7 +39,7 @@ namespace Metrofier.Host
             User32.SetWindowLong(window, User32.GWL_EXSTYLE, (int)lExStyle);
 	        User32.ShowWindow(window, ShowWindowCommands.SW_SHOW);
             
-            return User32.SetWindowPos(window, HWND.TopMost, 0, 20, 500, 500, SetWindowPosFlags.FrameChanged);
+            return User32.SetWindowPos(window, HWND.TopMost, 5, 5, 0, 0, SetWindowPosFlags.FrameChanged);
         }
 
         private bool enumWindowsProc(IntPtr hWnd, IntPtr lParam)
@@ -102,22 +105,52 @@ namespace Metrofier.Host
 
         public bool Show(uint processId)
         {
-            return User32.ShowWindow(launchedWindows[processId], ShowWindowCommands.SW_SHOW);
+            if (launchedWindows.ContainsKey(processId))
+            {
+                return User32.ShowWindow(launchedWindows[processId], ShowWindowCommands.SW_SHOW);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public bool Hide(uint processId)
         {
-            return User32.ShowWindow(launchedWindows[processId], ShowWindowCommands.SW_HIDE);
+            if (launchedWindows.ContainsKey(processId))
+            {
+                return User32.ShowWindow(launchedWindows[processId], ShowWindowCommands.SW_HIDE);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public bool Close(uint processId)
         {
-            return false;//PostMessage(launchedWindow, WM_CLOSE, 0, 0);
+            if (launchedWindows.ContainsKey(processId))
+            {
+                uint WM_CLOSE = 0x10;
+                return User32.PostMessage(new HandleRef(null, launchedWindows[processId]), WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public bool Resize(uint processId, int width, int height)
         {
-            return false;
+            if (launchedWindows.ContainsKey(processId))
+            {
+                return User32.SetWindowPos(launchedWindows[processId], HWND.TopMost, 10, 10, width - 20, height - 20, SetWindowPosFlags.IgnoreZOrder);
+            }
+            else
+            {
+                return false;
+            }
+            
         }
     }
 }

@@ -24,16 +24,15 @@ namespace Metrofier.App
     public sealed partial class MainPage : Page
     {
 
-        private readonly IMetrofierService service;
-        const string address = "http://localhost:8000/Metrofier/service";
-
         public MainPage()
         {
             this.InitializeComponent();
+            this.Unloaded += OnUnloaded;
+        }
 
-            BasicHttpBinding binding = new BasicHttpBinding();
-            ChannelFactory<IMetrofierService> factory = new ChannelFactory<IMetrofierService>(binding, new EndpointAddress(address));
-            service = factory.CreateChannel();
+        void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("OnUnloaded");
         }
 
         /// <summary>
@@ -43,12 +42,42 @@ namespace Metrofier.App
         /// property is typically used to configure the page.</param>
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine("OnNavigatedTo");
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("OnNavigatedFrom");
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            //service.Start("C:\\Program Files (x86)\\XBMC\\XBMC.exe", "C:\\Program Files (x86)\\XBMC");
-            service.Start("C:\\Windows\\System32\\notepad.exe", "C:\\Windows\\System32");
+            
+        }
+
+        private void TestRectangle_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("PointerPressed");
+        }
+
+        private void TestRectangle_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("PointerReleased");
+        }
+
+        private void TestRectangle_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("PointerExited");
+        }
+
+        private void TestRectangle_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            ((App)App.Current).service.Hide(((App)App.Current).processId);
+        }
+
+        private void InnerRectangle_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            ((App)App.Current).service.Show(((App)App.Current).processId);
         }
     }
 }
